@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理端 - 抽卡游戏</title>
+</head>
+<body>
+    <h2>管理端 - 抽卡游戏</h2>
+
+    <!-- 管理员ID输入 -->
+    <div>
+        <label for="adminId">管理员ID:</label>
+        <input type="text" id="adminId">
+        <button onclick="storeAdminId()">设置管理员ID</button>
+    </div>
+
+    <!-- 添加用户 -->
+    <div>
+        <label for="newUsername">新用户用户名:</label>
+        <input type="text" id="newUsername">
+        <label for="newPassword">新用户密码:</label>
+        <input type="password" id="newPassword">
+        <button onclick="newUser()">添加用户</button>
+    </div>
+
+    <!-- 充值 -->
+    <div>
+        <label for="usernameRecharge">用户名:</label>
+        <input type="text" id="usernameRecharge">
+        <label for="coinRecharge">充值金额:</label>
+        <input type="number" id="coinRecharge">
+        <button onclick="pay()">充值</button>
+    </div>
+
+    <!-- 查询兑换信息 -->
+    <div>
+        <button onclick="fetchExchangeInfo()">获取兑换信息</button>
+    </div>
+
+    <!-- 删除兑换信息 -->
+    <div>
+        <label for="messageIdDelete">兑换信息ID:</label>
+        <input type="text" id="messageIdDelete">
+        <button onclick="deleteExchangeInfo()">删除兑换信息</button>
+    </div>
+
+    <!-- 添加卡片 -->
+    <div>
+        <label for="usernameAddCard">用户名:</label>
+        <input type="text" id="usernameAddCard">
+        <label for="cardNameAddCard">卡片名称:</label>
+        <input type="text" id="cardNameAddCard">
+        <label for="numberAddCard">数量:</label>
+        <input type="number" id="numberAddCard">
+        <button onclick="addCard()">Add Card</button>
+    </div>
+    <div>
+    <button onclick="clearExchangeInfo()">清空兑换信息</button>
+</div>
+<div>
+    <input type="text" id="adminIdNotice">
+    <label for="noticeData">公告内容:</label>
+    <textarea id="noticeData" rows="4" style="width: 300px;"></textarea>
+    <button onclick="sendNotice()">发送公告</button>
+</div>
+    <div id="result"></div>
+
+    <script>
+// 发送公告
+function sendNotice() {
+    var noticeData = document.getElementById('noticeData').value;
+    var adminId = getAdminId(); // 从本地存储获取管理员ID
+    fetch('http://qinghe.pro:5000/sendNotice', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({id: adminId, data: noticeData})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 1) {
+            alert('公告发送成功');
+        } else {
+            alert('公告发送失败：' + data.data);
+        }
+    })
+    .catch(error => alert('请求失败，请重试。'));
+}
+// 清空兑换信息
+function clearExchangeInfo() {
+    var adminId = getAdminId();
+    fetch('http://qinghe.pro:5000/clearExchangeInfo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({id: adminId})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 1) {
+            alert('兑换信息已清空');
+            fetchExchangeInfo(); // 重新加载兑换信息
+        } else {
+            alert('清空失败：' + data.data);
+        }
+    })
+    .catch(error => alert('请求失败，请重试。'));
+}
+        // 存储管理员ID
+        function storeAdminId() {
+            var adminId = document.getElementById('adminId').value;
+            localStorage.setItem('adminId', adminId);
+            alert('管理员ID已设置');
+        }
+
+        // 获取存储的管理员ID
+        function getAdminId() {
+            return localStorage.getItem('adminId');
+        }
+
+        // 添加用户
+        function newUser() {
+            var adminId = getAdminId();
+            if (!adminId) {
+                alert('请设置管理员ID');
+                return;
+            }
+            var username = document.getElementById('newUsername').value;
+            var password = document.getElementById('newPassword').value;
+            fetch('http://qinghe.pro:5000/newuser', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({id: adminId, user: username, password: password})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').textContent = data.data;
+            })
+            .catch(error => document.getElementById('result').textContent = '请求失败，请重试。');
+        }
+
+        // 充值
+        function pay() {
+            var adminId = getAdminId();
+            if (!adminId) {
+                alert('请设置管理员ID');
+                return;
+            }
+            var user = document.getElementById('usernameRecharge').value;
+            var coin = document.getElementById('coinRecharge').value;
+            fetch('http://qinghe.pro:5000/pay', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({id: adminId, user: user, coin: coin})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').textContent = data.data;
+            })
+            .catch(error => document.getElementById('result').textContent = '请求失败，请重试。');
+        }
+
+        // 查询兑换信息
+        // 查询兑换信息
+function fetchExchangeInfo() {
+    var adminId = getAdminId();
+    if (!adminId) {
+        alert('请设置管理员ID');
+        return;
+    }
+    fetch('http://qinghe.pro:5000/exchangeInfo', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({id: adminId})
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.code === 1) {
+            var infoDiv = document.getElementById('result');
+            infoDiv.innerHTML = ''; // 清空现有数据
+            if (data.data.length === 0) {
+                infoDiv.innerHTML = '<p>No exchange information available.</p>';
+            } else {
+                data.data.forEach(function(item) {
+                    // 确保每个字段都存在，如果不存在则显示为空字符串
+                    var messageId = item[0] ? item[0] : '';
+                    var user = item[1] ? item[1] : '';
+                    var watchName = item[2] ? item[2] : '';
+                    var message = item[3] ? item[3] : '';
+                    infoDiv.innerHTML += '<p><strong>message_id:</strong> ' + messageId +
+                       '<strong>user:</strong> ' + user +
+                       '<strong>watchName:</strong> ' + watchName +
+                       '<strong>message:</strong> ' + message + '</p>';
+                });
+            }
+        } else {
+            document.getElementById('result').textContent = '获取兑换信息失败：' + data.data;
+        }
+    })
+    .catch(error => {
+        document.getElementById('result').textContent = '请求失败，请重试：' + error.message;
+    });
+}
+
+        // 删除兑换信息
+        function deleteExchangeInfo() {
+            var adminId = getAdminId();
+            if (!adminId) {
+                alert('请设置管理员ID');
+                return;
+            }
+            var messageId = document.getElementById('messageIdDelete').value;
+            fetch('http://qinghe.pro:5000/delExchangeInfo', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({id: adminId, message_id: messageId})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').textContent = data.data;
+            })
+            .catch(error => document.getElementById('result').textContent = '请求失败，请重试。');
+        }
+
+        // 添加卡片
+        function addCard() {
+            var adminId = getAdminId();
+            if (!adminId) {
+                alert('请设置管理员ID');
+                return;
+            }
+            var user = document.getElementById('usernameAddCard').value;
+            var cardName = document.getElementById('cardNameAddCard').value;
+            var number = document.getElementById('numberAddCard').value;
+            fetch('http://qinghe.pro:5000/addcard', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({id: adminId, user: user, card_name: cardName, number: number})
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').textContent = data.data;
+            })
+            .catch(error => document.getElementById('result').textContent = '请求失败，请重试。');
+        }
+    </script>
+</body>
+</html>
